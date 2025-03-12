@@ -1,0 +1,36 @@
+-- Load data into dim_store
+INSERT INTO `saleswalmart-424512.OLAPSW.dim_store` (store_id, type, size)
+SELECT DISTINCT store_id, type, size FROM `SalesWalmartOLTP.store`;
+
+-- Load data into dim_date
+INSERT INTO `saleswalmart-424512.OLAPSW.dim_date` (date_id, is_holiday)
+SELECT DISTINCT date_id, is_holiday FROM (
+    SELECT date_id, is_holiday FROM `SalesWalmartOLTP.test`
+    UNION ALL
+    SELECT date_id, is_holiday FROM `SalesWalmartOLTP.train`
+);
+
+-- Load data into dim_feature
+INSERT INTO `saleswalmart-424512.OLAPSW.dim_feature` (temperature, fuel_price, markdown1, markdown2, markdown3, markdown4, markdown5, cpi, unemployment)
+SELECT DISTINCT temperature, fuel_price, markdown1, markdown2, markdown3, markdown4, markdown5, cpi, unemployment FROM `SalesWalmartOLTP.feature`;
+
+-- Load data into fact_sales
+INSERT INTO `saleswalmart-424512.OLAPSW.fact_sales` (store_id, dept_id, date_id, feature_id, weekly_sales, is_holiday)
+SELECT 
+    train.store_id, 
+    train.dept_id, 
+    train.date_id, 
+    feature.feature_id, 
+    train.weekly_sales, 
+    train.is_holiday
+FROM `SalesWalmartOLTP.train` AS train
+JOIN `saleswalmart-424512.OLAPSW.dim_feature` AS feature
+ON train.temperature = feature.temperature 
+AND train.fuel_price = feature.fuel_price
+AND train.markdown1 = feature.markdown1
+AND train.markdown2 = feature.markdown2
+AND train.markdown3 = feature.markdown3
+AND train.markdown4 = feature.markdown4
+AND train.markdown5 = feature.markdown5
+AND train.cpi = feature.cpi
+AND train.unemployment = feature.unemployment;
